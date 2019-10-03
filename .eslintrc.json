@@ -1,0 +1,18 @@
+{
+	"extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+	"env": {
+		"node": true,
+		"jest": true
+	},
+	"parser": "@typescript-eslint/parser",
+	"parserOptions": {
+		"ecmaVersion": 2017,
+		"sourceType": "module"
+	},
+	"plugins": ["@typescript-eslint/eslint-plugin"],
+	"rules": {
+		"no-dupe-class-members": "off",
+		"semi": "off",
+		"@typescript-eslint/member-delimiter-style": "off"
+	}
+}
