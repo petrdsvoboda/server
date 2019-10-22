@@ -1,4 +1,4 @@
 declare module 'express-query-boolean' {
-	const expressQueryBoolean: () => void
+	const expressQueryBoolean: () => (req: any, res: any, next: any) => void
 	export = expressQueryBoolean
 }

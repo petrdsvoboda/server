@@ -12,7 +12,7 @@ export interface ServerOptions {
 
 export const serve = (options: ServerOptions): Express.Application => {
 	console.log('Starting server...')
-	const app: any = express()
+	const app = express()
 
 	if (options.env !== 'production') {
 		app.use(logger('dev'))

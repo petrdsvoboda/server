@@ -1,8 +1,8 @@
 import { Router as ExpressRouter } from 'express'
 import { PathParams, RequestHandler } from 'express-serve-static-core'
 
-import Controller from './controller'
-import { Serializable } from './types/Serializable'
+import Controller from './Controller'
+import { Serializable } from '../types/Serializable'
 
 type HandlerOptions = {
 	method: 'GET' | 'POST' | 'PATCH' | 'DELETE'

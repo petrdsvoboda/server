@@ -1,10 +1,11 @@
 import { Request, Response } from 'express'
 import { normalize, schema, NormalizedSchema } from 'normalizr'
 
-import { DataService } from './types/DataService'
-import { DeepPartial } from './types/DeepPartial'
-import { Id } from './types/Id'
-import { Serializable } from './types/Serializable'
+import { UndefinedError } from '../models/Error'
+import { DataService } from '../types/DataService'
+import { DeepPartial } from '../types/DeepPartial'
+import { Id } from '../types/Id'
+import { Serializable } from '../types/Serializable'
 
 export { Request, Response }
 
@@ -22,6 +23,9 @@ export default abstract class Controller<T extends Serializable> {
 	public async getAll(_: Request, response: Response): Promise<Response> {
 		try {
 			const data = await this.service.findAll()
+			if (data === undefined) {
+				throw new UndefinedError('getAll')
+			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -36,6 +40,9 @@ export default abstract class Controller<T extends Serializable> {
 
 		try {
 			const data = await this.service.findById(id)
+			if (data === undefined) {
+				throw new UndefinedError('get')
+			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -51,6 +58,9 @@ export default abstract class Controller<T extends Serializable> {
 		const body = request.body as DeepPartial<T>
 		try {
 			const data = await this.service.create(body)
+			if (data === undefined) {
+				throw new UndefinedError('create')
+			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -69,6 +79,9 @@ export default abstract class Controller<T extends Serializable> {
 
 		try {
 			const data = await this.service.patch({ id, ...body })
+			if (data === undefined) {
+				throw new UndefinedError('patch')
+			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
