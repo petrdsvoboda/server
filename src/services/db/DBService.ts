@@ -1,31 +1,37 @@
 import {
 	Model,
 	ModelClass,
-	DeepPartialGraph,
 	QueryBuilder,
-	QueryBuilderYieldingCount
+	QueryBuilderYieldingCount,
+	DeepPartialGraph
 } from 'objection'
 
+import { DataService } from '../../types/DataService'
+import { DeepPartial } from '../../types/DeepPartial'
+import { Id } from '../../types/Id'
 import { DBError, UndefinedError } from '../../models/Error'
 
 export type Query<T extends Model> = QueryBuilder<T, T[], T[] | undefined>
 export type QuerySingle<T extends Model> = QueryBuilder<T, T, T | undefined>
 export type QueryNumber<T extends Model> = QueryBuilderYieldingCount<T, T[]>
+export type DBQuery<T extends Model> =
+	| Query<T>
+	| QuerySingle<T>
+	| QueryNumber<T>
 
-export type ModifyFn<T extends Model> = (query: Query<T>) => void
-export type ModifyFnSingle<T extends Model> = (query: QuerySingle<T>) => void
+type Data<T> = DeepPartial<T>
 
-type Id = string | number
-type Data<T> = DeepPartialGraph<T>
-
-abstract class DBService<T extends Model> {
+abstract class DBService<T extends Model> implements DataService<T> {
 	protected readonly Model: ModelClass<T>
 
 	constructor(modelClass: ModelClass<T>) {
 		this.Model = modelClass
 	}
 
-	protected getQuery(query?: Query<T>): Query<T> {
+	protected getQuery(query?: Query<T>): Query<T>
+	protected getQuery(query?: QuerySingle<T>): QuerySingle<T>
+	protected getQuery(query?: QueryNumber<T>): QueryNumber<T>
+	protected getQuery(query?: DBQuery<T>): DBQuery<T> {
 		if (!query) query = this.Model.query()
 		return query
 	}
@@ -36,7 +42,7 @@ abstract class DBService<T extends Model> {
 		query: QueryNumber<T>
 	): Promise<number | undefined>
 	protected async callQuery(
-		query: Query<T> | QuerySingle<T> | QueryNumber<T>
+		query: DBQuery<T>
 	): Promise<T[] | T | number | undefined> {
 		try {
 			const data = await query
@@ -72,18 +78,29 @@ abstract class DBService<T extends Model> {
 		return _data
 	}
 
-	public async create(createData: Data<T>, query?: Query<T>): Promise<T> {
-		const _query = this.getQuery(query).insertGraphAndFetch(createData, {
-			relate: true
-		})
+	public async create(
+		createData: Data<T>,
+		query?: QuerySingle<T>
+	): Promise<T> {
+		const _query = this.getQuery(query).insertGraphAndFetch(
+			(createData as unknown) as DeepPartialGraph<T>,
+			{
+				relate: true
+			}
+		)
 		let _data = await this.callQuery(_query)
 		_data = this.validateUndefined(_data)
 
 		return _data
 	}
 
-	public async patch(updateData: Data<T>, query?: Query<T>): Promise<T> {
-		const _query = this.getQuery(query).upsertGraphAndFetch(updateData)
+	public async patch(
+		updateData: Data<T>,
+		query?: QuerySingle<T>
+	): Promise<T> {
+		const _query = this.getQuery(query).upsertGraphAndFetch(
+			(updateData as unknown) as DeepPartialGraph<T>
+		)
 		let _data = await this.callQuery(_query)
 		_data = this.validateUndefined(_data)
 
@@ -93,7 +110,7 @@ abstract class DBService<T extends Model> {
 	public patchById(
 		id: Id,
 		updateData: Data<T>,
-		query?: Query<T>
+		query?: QuerySingle<T>
 	): Promise<T> {
 		return this.patch({ id, ...updateData }, query)
 	}
