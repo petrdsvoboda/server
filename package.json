@@ -10,7 +10,7 @@
 		"cors": "^2.8.5",
 		"express": "^4.17.1",
 		"express-query-boolean": "^2.0.0",
-		"knex": "^0.19.4",
+		"knex": "^0.19.5",
 		"morgan": "^1.9.1",
 		"normalizr": "^3.4.1",
 		"objection": "^1.6.11"
