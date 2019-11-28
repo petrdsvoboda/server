@@ -64,18 +64,18 @@ abstract class DBService<T extends Model> implements DataService<T> {
 
 	public async findAll(query?: Query<T>): Promise<T[]> {
 		const _query = this.getQuery(query)
-		let _data = await this.callQuery(_query)
-		_data = this.validateUndefined(_data)
+		const data = await this.callQuery(_query)
+		const validatedData = this.validateUndefined(data)
 
-		return _data
+		return validatedData
 	}
 
 	public async findById(id: Id, query?: Query<T>): Promise<T> {
 		const _query = this.getQuery(query).findById(id)
-		let _data = await this.callQuery(_query)
-		_data = this.validateUndefined(_data)
+		const data = await this.callQuery(_query)
+		const validatedData = this.validateUndefined(data)
 
-		return _data
+		return validatedData
 	}
 
 	public async create(
@@ -88,10 +88,10 @@ abstract class DBService<T extends Model> implements DataService<T> {
 				relate: true
 			}
 		)
-		let _data = await this.callQuery(_query)
-		_data = this.validateUndefined(_data)
+		const data = await this.callQuery(_query)
+		const validatedData = this.validateUndefined(data)
 
-		return _data
+		return validatedData
 	}
 
 	public async patch(
@@ -101,10 +101,10 @@ abstract class DBService<T extends Model> implements DataService<T> {
 		const _query = this.getQuery(query).upsertGraphAndFetch(
 			(updateData as unknown) as DeepPartialGraph<T>
 		)
-		let _data = await this.callQuery(_query)
-		_data = this.validateUndefined(_data)
+		const data = await this.callQuery(_query)
+		const validatedData = this.validateUndefined(data)
 
-		return _data
+		return validatedData
 	}
 
 	public patchById(

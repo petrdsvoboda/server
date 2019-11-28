@@ -15,12 +15,21 @@ export default class Router {
 	private router: ExpressRouter
 	private path: string
 
-	constructor(path: string) {
+	constructor(path?: string) {
 		this.router = ExpressRouter()
-		this.path = '/' + path
+		this.path = '/' + (path ? path : '')
 	}
 
-	public handle(options: HandlerOptions): void {
+	public handle(options: HandlerOptions): void
+	public handle(options: HandlerOptions[]): void
+	public handle(options: HandlerOptions | HandlerOptions[]): void {
+		if (Array.isArray(options)) {
+			options.map(o => {
+				this.handle(o)
+			})
+			return
+		}
+
 		const { method, handler, params, action } = options
 		let path = this.path
 

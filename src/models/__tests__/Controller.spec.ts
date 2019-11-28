@@ -57,8 +57,5 @@ describe('Controller', () => {
 		new TestController(service, itemSchema)
 	})
 
-	test('it should handle getAll', () => {
-		const controller = new TestController(service, itemSchema)
-		const items = 
-	})
+	test('it should handle getAll', () => {})
 })

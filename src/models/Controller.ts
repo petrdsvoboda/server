@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import { normalize, schema, NormalizedSchema } from 'normalizr'
 
-import { UndefinedError } from '../models/Error'
 import { DataService } from '../types/DataService'
 import { DeepPartial } from '../types/DeepPartial'
 import { Id } from '../types/Id'
@@ -23,9 +22,6 @@ export default abstract class Controller<T extends Serializable> {
 	public async getAll(_: Request, response: Response): Promise<Response> {
 		try {
 			const data = await this.service.findAll()
-			if (data === undefined) {
-				throw new UndefinedError('getAll')
-			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -40,9 +36,6 @@ export default abstract class Controller<T extends Serializable> {
 
 		try {
 			const data = await this.service.findById(id)
-			if (data === undefined) {
-				throw new UndefinedError('get')
-			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -58,9 +51,6 @@ export default abstract class Controller<T extends Serializable> {
 		const body = request.body as DeepPartial<T>
 		try {
 			const data = await this.service.create(body)
-			if (data === undefined) {
-				throw new UndefinedError('create')
-			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -79,9 +69,6 @@ export default abstract class Controller<T extends Serializable> {
 
 		try {
 			const data = await this.service.patch({ id, ...body })
-			if (data === undefined) {
-				throw new UndefinedError('patch')
-			}
 			const normalizedData = this.normalize(data)
 			return response.send(normalizedData)
 		} catch (err) {
@@ -110,7 +97,10 @@ export default abstract class Controller<T extends Serializable> {
 	protected normalize(data: T[]): NormalizedSchema<T, Id[]>
 	protected normalize(data: T | T[]): NormalizedSchema<T, Id | Id[]> {
 		if (Array.isArray(data)) {
-			return normalize(data.map(i => i.toJSON() as T), this.arraySchema)
+			return normalize(
+				data.map(i => i.toJSON() as T),
+				this.arraySchema
+			)
 		} else {
 			return normalize(data.toJSON(), this.schema)
 		}
