@@ -1,7 +1,7 @@
 {
 	"name": "@petrdorg/server",
-	"version": "0.1.0",
-	"main": "dist/index.js",
+	"version": "0.1.1",
+	"main": "lib/index.js",
 	"repository": "git@github.com:petrdsvoboda/server.git",
 	"author": "Petr D. Svoboda <petrdsvoboda@gmail.com>",
 	"license": "MIT",
@@ -13,7 +13,7 @@
 		"test": "jest",
 		"test:coverage": "jest --coverage",
 		"build": "rm -rf lib & tsc",
-		"publish": "yarn test && yarn build"
+		"prepublish": "yarn test && yarn build"
 	},
 	"dependencies": {
 		"body-parser": "^1.19.0",
