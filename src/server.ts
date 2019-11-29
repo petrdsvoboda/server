@@ -23,7 +23,7 @@ export const serve = (options: ServerOptions): Express.Application => {
 	app.use(bodyParser.json())
 	app.use(boolParser())
 
-	const port = options.port ?? 8080
+	const port = options.port || 8080
 	app.listen(port, () => {
 		console.log('Server listening on port: ', port)
 	})

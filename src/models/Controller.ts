@@ -8,12 +8,15 @@ import { Serializable } from '../types/Serializable'
 
 export { Request, Response }
 
-export default abstract class Controller<T extends Serializable> {
-	protected service: DataService<T>
+export default abstract class Controller<
+	S extends DataService<T>,
+	T extends Serializable
+> {
+	protected service: S
 	protected schema: schema.Entity
 	protected arraySchema: schema.Array
 
-	constructor(service: DataService<T>, normalizrSchema: schema.Entity) {
+	constructor(service: S, normalizrSchema: schema.Entity) {
 		this.service = service
 		this.schema = normalizrSchema
 		this.arraySchema = new schema.Array(normalizrSchema)

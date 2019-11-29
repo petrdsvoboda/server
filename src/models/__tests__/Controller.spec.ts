@@ -22,18 +22,18 @@ class TestService implements DataService<Item> {
 	public async findAll(): Promise<Item[]> {
 		return this.items
 	}
-	public async findById(id: string): Promise<Item | undefined> {
-		return this.items.find(i => i.id === id)
+	public async findById(id: string): Promise<Item> {
+		return this.items.find(i => i.id === id) as Item
 	}
-	public async create(data: Item): Promise<Item | undefined> {
+	public async create(data: Item): Promise<Item> {
 		this.items.push(data)
 		return data
 	}
-	public async patch(data: Item): Promise<Item | undefined> {
+	public async patch(data: Item): Promise<Item> {
 		this.items.find(i => i.id === data.id)
 		return data
 	}
-	public async patchById(id: string, data: Item): Promise<Item | undefined> {
+	public async patchById(id: string, data: Item): Promise<Item> {
 		this.items.find(i => i.id === id)
 		return data
 	}
@@ -48,7 +48,7 @@ class TestService implements DataService<Item> {
 	}
 }
 
-class TestController extends Controller<Item> {}
+class TestController extends Controller<TestService, Item> {}
 
 const service = new TestService()
 

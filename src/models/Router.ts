@@ -2,6 +2,7 @@ import { Router as ExpressRouter } from 'express'
 import { PathParams, RequestHandler } from 'express-serve-static-core'
 
 import Controller from './Controller'
+import { DataService } from '../types/DataService'
 import { Serializable } from '../types/Serializable'
 
 type HandlerOptions = {
@@ -60,8 +61,8 @@ export default class Router {
 		return this.router
 	}
 
-	public handleController<T extends Serializable>(
-		controller: Controller<T>
+	public handleController<S extends DataService<T>, T extends Serializable>(
+		controller: Controller<S, T>
 	): void {
 		this.handle({
 			method: 'GET',
