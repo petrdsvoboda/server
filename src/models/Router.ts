@@ -1,15 +1,15 @@
 import { Router as ExpressRouter } from 'express'
 import { PathParams, RequestHandler } from 'express-serve-static-core'
-
+import { Model } from 'objection'
+import DBService from '../services/db/DBService'
 import Controller from './Controller'
-import { DataService } from '../types/DataService'
-import { Serializable } from '../types/Serializable'
 
 type HandlerOptions = {
 	method: 'GET' | 'POST' | 'PATCH' | 'DELETE'
-	handler: RequestHandler
+	handler: RequestHandler<any, any, any>
 	params?: string | string[]
 	action?: string
+	actionParams?: string | string[]
 }
 
 export default class Router {
@@ -21,17 +21,17 @@ export default class Router {
 		this.path = '/' + (path ? path : '')
 	}
 
-	public handle(options: HandlerOptions): void
-	public handle(options: HandlerOptions[]): void
-	public handle(options: HandlerOptions | HandlerOptions[]): void {
+	public handle(options: HandlerOptions): Router
+	public handle(options: HandlerOptions[]): Router
+	public handle(options: HandlerOptions | HandlerOptions[]): Router {
 		if (Array.isArray(options)) {
 			options.map(o => {
 				this.handle(o)
 			})
-			return
+			return this
 		}
 
-		const { method, handler, params, action } = options
+		const { method, handler, params, action, actionParams } = options
 		let path = this.path
 
 		if (params) {
@@ -46,6 +46,14 @@ export default class Router {
 			path += '/action/' + action
 		}
 
+		if (actionParams) {
+			if (Array.isArray(actionParams)) {
+				path += actionParams.map(param => '/:' + param)
+			} else {
+				path += '/:' + actionParams
+			}
+		}
+
 		if (method === 'GET') {
 			this.get(path, handler)
 		} else if (method === 'POST') {
@@ -55,15 +63,12 @@ export default class Router {
 		} else if (method === 'DELETE') {
 			this.delete(path, handler)
 		}
-	}
 
-	public getRouter(): ExpressRouter {
-		return this.router
+		return this
 	}
-
-	public handleController<S extends DataService<T>, T extends Serializable>(
-		controller: Controller<S, T>
-	): void {
+	public handleController<S extends DBService<M>, M extends Model>(
+		controller: Controller<M, S>
+	): Router {
 		this.handle({
 			method: 'GET',
 			handler: controller.getAll
@@ -87,6 +92,16 @@ export default class Router {
 			handler: controller.delete,
 			params: 'id'
 		})
+		return this
+	}
+
+	public handleRouter(router: Router): Router {
+		this.router.use(this.path, router.getExpressRouter())
+		return this
+	}
+
+	public getExpressRouter(): ExpressRouter {
+		return this.router
 	}
 
 	private get(path: PathParams, handler: RequestHandler): void {

@@ -1,12 +1,12 @@
+import { Model, PartialModelObject } from 'objection'
 import { DataService } from '../../types/DataService'
-import { DeepPartial } from '../../types/DeepPartial'
 import { Id } from '../../types/Id'
 
 interface CacheOptions {
 	reloadTime?: number
 }
 
-abstract class CacheService<T> implements DataService<T> {
+abstract class CacheService<T extends Model> implements DataService<T> {
 	protected readonly service: DataService<T>
 	private readonly reloadTime: number = 60 * 30
 
@@ -36,18 +36,21 @@ abstract class CacheService<T> implements DataService<T> {
 	public async findById(id: Id): Promise<T> {
 		return this.items[typeof id === 'string' ? parseInt(id) : id]
 	}
-	public async create(data: DeepPartial<T>): Promise<T> {
-		this.items[0] = data as T
+	public async create(data: PartialModelObject<T>): Promise<T> {
+		this.items[0] = (data as any) as T
 		return this.items[0]
 	}
-	public async patch(data: DeepPartial<T>): Promise<T> {
-		this.items[0] = data as T
+	public async patch(data: PartialModelObject<T>): Promise<T> {
+		this.items[0] = (data as any) as T
 		return this.items[0]
 	}
-	public async patchById(id: Id, data: DeepPartial<T>): Promise<T> {
+	public async patchById(id: Id, data: PartialModelObject<T>): Promise<T> {
 		return this.patch({ id: id, ...data })
 	}
-	public async deleteById(id: Id): Promise<void> {
+	public async deleteById(id: Id): Promise<number> {
+		return this.deleteById(id)
+	}
+	public async PartialModelObject(id: Id): Promise<void> {
 		this.items[
 			typeof id === 'string' ? parseInt(id) : id
 		] = (undefined as unknown) as T

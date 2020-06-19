@@ -1,8 +1,7 @@
-import * as express from 'express'
 import * as bodyParser from 'body-parser'
-import * as boolParser from 'express-query-boolean'
-
 import * as cors from 'cors'
+import * as express from 'express'
+import { Express } from 'express-serve-static-core'
 import * as logger from 'morgan'
 
 export interface ServerOptions {
@@ -10,23 +9,22 @@ export interface ServerOptions {
 	env: string
 }
 
-export const serve = (options: ServerOptions): Express.Application => {
+export const serve = (options: ServerOptions): Express => {
 	console.log('Starting server...')
-	const app = express()
+	const server = express()
 
 	if (options.env !== 'production') {
-		app.use(logger('dev'))
+		server.use(logger('dev'))
 	}
 
-	app.use(cors())
-	app.use(bodyParser.urlencoded({ extended: false }))
-	app.use(bodyParser.json())
-	app.use(boolParser())
+	server.use(cors())
+	server.use(bodyParser.urlencoded({ extended: false }))
+	server.use(bodyParser.json())
 
-	const port = options.port || 8080
-	app.listen(port, () => {
-		console.log('Server listening on port: ', port)
+	const port = options.port ?? 8080
+	server.listen(port, () => {
+		console.log('Server listening on port:', port)
 	})
 
-	return app
+	return server
 }

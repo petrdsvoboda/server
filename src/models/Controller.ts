@@ -1,16 +1,16 @@
 import { Request, Response } from 'express'
-import { normalize, schema, NormalizedSchema } from 'normalizr'
-
-import { DataService } from '../types/DataService'
-import { DeepPartial } from '../types/DeepPartial'
+import { normalize, NormalizedSchema, schema } from 'normalizr'
+import { Model, PartialModelObject } from 'objection'
+import DBService from '../services/db/DBService'
+import QueryService from '../services/db/QueryService'
 import { Id } from '../types/Id'
-import { Serializable } from '../types/Serializable'
 
 export { Request, Response }
 
 export default abstract class Controller<
-	S extends DataService<T>,
-	T extends Serializable
+	M extends Model,
+	S extends DBService<M, Q> = DBService<M, any>,
+	Q extends QueryService<M> = QueryService<M>
 > {
 	protected service: S
 	protected schema: schema.Entity
@@ -22,14 +22,14 @@ export default abstract class Controller<
 		this.arraySchema = new schema.Array(normalizrSchema)
 	}
 
-	public async getAll(_: Request, response: Response): Promise<Response> {
+	public getAll = async (_: Request, response: Response): Promise<void> => {
 		try {
 			const data = await this.service.findAll()
-			const normalizedData = this.normalize(data)
-			return response.send(normalizedData)
+			// const normalizedData = this.normalize(data)
+			response.send(data)
 		} catch (err) {
 			console.log(err)
-			return response.status(404).send(err)
+			response.status(404).send(err)
 		}
 	}
 
@@ -39,8 +39,8 @@ export default abstract class Controller<
 
 		try {
 			const data = await this.service.findById(id)
-			const normalizedData = this.normalize(data)
-			return response.send(normalizedData)
+			// const normalizedData = this.normalize(data)
+			return response.send(data)
 		} catch (err) {
 			console.log(err)
 			return response.status(404).send(err)
@@ -51,11 +51,11 @@ export default abstract class Controller<
 		request: Request,
 		response: Response
 	): Promise<Response> {
-		const body = request.body as DeepPartial<T>
+		const body = request.body as PartialModelObject<M>
 		try {
 			const data = await this.service.create(body)
-			const normalizedData = this.normalize(data)
-			return response.send(normalizedData)
+			// const normalizedData = this.normalize(data)
+			return response.send(data)
 		} catch (err) {
 			console.log(err)
 			return response.status(404).send(err)
@@ -68,12 +68,12 @@ export default abstract class Controller<
 	): Promise<Response> {
 		const params = request.params as { id: string }
 		const id = parseInt(params.id, 10)
-		const body = request.body as DeepPartial<T>
+		const body = request.body as PartialModelObject<M>
 
 		try {
 			const data = await this.service.patch({ id, ...body })
-			const normalizedData = this.normalize(data)
-			return response.send(normalizedData)
+			// const normalizedData = this.normalize(data)
+			return response.send(data)
 		} catch (err) {
 			console.log(err)
 			return response.status(404).send(err)
@@ -96,12 +96,12 @@ export default abstract class Controller<
 		}
 	}
 
-	protected normalize(data: T): NormalizedSchema<T, Id>
-	protected normalize(data: T[]): NormalizedSchema<T, Id[]>
-	protected normalize(data: T | T[]): NormalizedSchema<T, Id | Id[]> {
+	protected normalize(data: M): NormalizedSchema<M, Id>
+	protected normalize(data: M[]): NormalizedSchema<M, Id[]>
+	protected normalize(data: M | M[]): NormalizedSchema<M, Id | Id[]> {
 		if (Array.isArray(data)) {
 			return normalize(
-				data.map(i => i.toJSON() as T),
+				data.map(i => i.toJSON() as M),
 				this.arraySchema
 			)
 		} else {

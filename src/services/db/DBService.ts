@@ -1,123 +1,90 @@
 import {
 	Model,
 	ModelClass,
-	QueryBuilder,
-	QueryBuilderYieldingCount,
-	DeepPartialGraph
+	NumberQueryBuilder,
+	PartialModelObject,
+	QueryBuilderType,
+	SingleQueryBuilder
 } from 'objection'
-
-import { DataService } from '../../types/DataService'
-import { DeepPartial } from '../../types/DeepPartial'
-import { Id } from '../../types/Id'
 import { DBError, UndefinedError } from '../../models/Error'
+import { DataService } from '../../types/DataService'
+import { Id } from '../../types/Id'
+import QueryService, { Binding } from './QueryService'
 
-export type Query<T extends Model> = QueryBuilder<T, T[], T[] | undefined>
-export type QuerySingle<T extends Model> = QueryBuilder<T, T, T | undefined>
-export type QueryNumber<T extends Model> = QueryBuilderYieldingCount<T, T[]>
-export type DBQuery<T extends Model> =
-	| Query<T>
-	| QuerySingle<T>
-	| QueryNumber<T>
+export type Query<M extends Model> = QueryBuilderType<M>
+export type QuerySingle<M extends Model> = SingleQueryBuilder<
+	QueryBuilderType<M>
+>
+export type QueryNumber<M extends Model> = NumberQueryBuilder<
+	QueryBuilderType<M>
+>
+export type DBQuery<M extends Model> =
+	| Query<M>
+	| QuerySingle<M>
+	| QueryNumber<M>
 
-type Data<T> = DeepPartial<T>
+abstract class DBService<
+	M extends Model,
+	Q extends QueryService<M> = QueryService<M>
+> implements DataService<M> {
+	constructor(protected queryService: Q) {}
 
-abstract class DBService<T extends Model> implements DataService<T> {
-	protected readonly Model: ModelClass<T>
-
-	constructor(modelClass: ModelClass<T>) {
-		this.Model = modelClass
+	static fromModel<M extends Model>(
+		this: {
+			new (queryService: QueryService<M>): DBService<M, QueryService<M>>
+		},
+		model: ModelClass<M>,
+		binding?: Binding<M>
+	): DBService<M, QueryService<M>> {
+		return new this(new QueryService<M>(model, binding))
 	}
 
-	protected getQuery(query?: Query<T>): Query<T>
-	protected getQuery(query?: QuerySingle<T>): QuerySingle<T>
-	protected getQuery(query?: QueryNumber<T>): QueryNumber<T>
-	protected getQuery(query?: DBQuery<T>): DBQuery<T> {
-		if (!query) query = this.Model.query()
-		return query
-	}
-
-	protected async callQuery(query: Query<T>): Promise<T[] | undefined>
-	protected async callQuery(query: QuerySingle<T>): Promise<T | undefined>
-	protected async callQuery(
-		query: QueryNumber<T>
-	): Promise<number | undefined>
-	protected async callQuery(
-		query: DBQuery<T>
-	): Promise<T[] | T | number | undefined> {
-		try {
-			const data = await query
-			return data
-		} catch (err) {
-			throw new DBError(err)
-		}
-	}
-
-	protected validateUndefined(data: T | undefined | null): T
-	protected validateUndefined(data: T[] | undefined | null): T[]
-	protected validateUndefined(data: T | T[] | undefined | null): T | T[] {
-		if (data === undefined || data === null) {
+	protected validate(data: M[] | M | number | null): M[] | M | number {
+		if (data === null) {
 			throw new UndefinedError(Model.toString())
 		} else {
 			return data
 		}
 	}
 
-	public async findAll(query?: Query<T>): Promise<T[]> {
-		const _query = this.getQuery(query)
-		const data = await this.callQuery(_query)
-		const validatedData = this.validateUndefined(data)
-
-		return validatedData
+	protected async callQuery(query: Query<M>): Promise<M[]>
+	protected async callQuery(query: QuerySingle<M>): Promise<M>
+	protected async callQuery(query: QueryNumber<M>): Promise<number>
+	protected async callQuery(query: DBQuery<M>): Promise<M[] | M | number> {
+		let data: M[] | M | number | null
+		try {
+			data = (await query) as M[] | M | number | null
+		} catch (err) {
+			throw new DBError(err)
+		}
+		return this.validate(data)
 	}
 
-	public async findById(id: Id, query?: Query<T>): Promise<T> {
-		const _query = this.getQuery(query).findById(id)
-		const data = await this.callQuery(_query)
-		const validatedData = this.validateUndefined(data)
-
-		return validatedData
+	public async findAll(): Promise<M[]> {
+		return await this.callQuery(this.queryService.query())
 	}
 
-	public async create(
-		createData: Data<T>,
-		query?: QuerySingle<T>
-	): Promise<T> {
-		const _query = this.getQuery(query).insertGraphAndFetch(
-			(createData as unknown) as DeepPartialGraph<T>,
-			{
-				relate: true
-			}
-		)
-		const data = await this.callQuery(_query)
-		const validatedData = this.validateUndefined(data)
-
-		return validatedData
+	public async findById(id: Id): Promise<M> {
+		return await this.callQuery(this.queryService.findById(id))
 	}
 
-	public async patch(
-		updateData: Data<T>,
-		query?: QuerySingle<T>
-	): Promise<T> {
-		const _query = this.getQuery(query).upsertGraphAndFetch(
-			(updateData as unknown) as DeepPartialGraph<T>
-		)
-		const data = await this.callQuery(_query)
-		const validatedData = this.validateUndefined(data)
-
-		return validatedData
+	public async create(inputData: PartialModelObject<M>): Promise<M> {
+		return await this.callQuery(this.queryService.insert(inputData))
 	}
 
-	public patchById(
+	public async patch(inputData: PartialModelObject<M>): Promise<M> {
+		return await this.callQuery(this.queryService.upsert(inputData))
+	}
+
+	public async patchById(
 		id: Id,
-		updateData: Data<T>,
-		query?: QuerySingle<T>
-	): Promise<T> {
-		return this.patch({ id, ...updateData }, query)
+		inputData: PartialModelObject<M>
+	): Promise<M> {
+		return await this.callQuery(this.queryService.upsertById(id, inputData))
 	}
 
-	public async deleteById(id: Id, query?: Query<T>): Promise<void> {
-		const _query = this.getQuery(query).deleteById(id)
-		await this.callQuery(_query)
+	public async deleteById(id: Id): Promise<number> {
+		return await this.callQuery(this.queryService.deleteById(id))
 	}
 }
 
