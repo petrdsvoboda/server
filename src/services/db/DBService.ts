@@ -34,7 +34,7 @@ abstract class DBService<
 			new (queryService: QueryService<M>): DBService<M, QueryService<M>>
 		},
 		model: ModelClass<M>,
-		binding?: Binding<M>
+		binding?: Binding
 	): DBService<M, QueryService<M>> {
 		return new this(new QueryService<M>(model, binding))
 	}

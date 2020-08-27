@@ -19,25 +19,25 @@ export type DBQuery<T extends Model> =
 	| QuerySingle<T>
 	| QueryNumber<T>
 
-export type Binding<T extends Model> = Transaction | Knex<any, any> | undefined
+export type Binding = Transaction | Knex<any, any> | undefined
 
 class QueryService<T extends Model> {
-	constructor(private model: ModelClass<T>, private binding?: Binding<T>) {}
+	constructor(private model: ModelClass<T>, private binding?: Binding) {}
 
-	public query(binding?: Binding<T>): QueryBuilderType<T> {
+	public query(binding?: Binding): QueryBuilderType<T> {
 		return this.model.query(this.binding ?? binding)
 	}
 
 	public findById(
 		id: Id,
-		binding?: Binding<T>
+		binding?: Binding
 	): SingleQueryBuilder<QueryBuilderType<T>> {
 		return this.model.query(this.binding ?? binding).findById(id)
 	}
 
 	public insert(
 		data: PartialModelObject<T>,
-		binding?: Binding<T>
+		binding?: Binding
 	): SingleQueryBuilder<QueryBuilderType<T>> {
 		return this.model
 			.query(this.binding ?? binding)
@@ -48,7 +48,7 @@ class QueryService<T extends Model> {
 
 	public upsert(
 		data: PartialModelObject<T>,
-		binding?: Binding<T>
+		binding?: Binding
 	): SingleQueryBuilder<QueryBuilderType<T>> {
 		return this.model
 			.query(this.binding ?? binding)
@@ -60,14 +60,14 @@ class QueryService<T extends Model> {
 	public upsertById(
 		id: Id,
 		data: PartialModelObject<T>,
-		binding?: Binding<T>
+		binding?: Binding
 	): SingleQueryBuilder<QueryBuilderType<T>> {
 		return this.upsert({ id, ...data }, this.binding ?? binding)
 	}
 
 	public patch(
 		data: PartialModelObject<T>,
-		binding?: Binding<T>
+		binding?: Binding
 	): SingleQueryBuilder<QueryBuilderType<T>> {
 		return this.model.query(this.binding ?? binding).patchAndFetch(data)
 	}
@@ -75,7 +75,7 @@ class QueryService<T extends Model> {
 	public patchById(
 		id: Id,
 		data: PartialModelObject<T>,
-		binding?: Binding<T>
+		binding?: Binding
 	): SingleQueryBuilder<QueryBuilderType<T>> {
 		return this.model
 			.query(this.binding ?? binding)
@@ -84,7 +84,7 @@ class QueryService<T extends Model> {
 
 	public deleteById(
 		id: Id,
-		binding?: Binding<T>
+		binding?: Binding
 	): NumberQueryBuilder<QueryBuilderType<T>> {
 		return this.model.query(this.binding ?? binding).deleteById(id)
 	}
